@@ -411,14 +411,26 @@ async def check_env():
     if topicid is None and wxpuser_uid is None:
         print("wxpuser的topicid和WXPUSER_UID都为空,请至少填写其中一个")
         exit()
-    return cks.split("@") , wxpuser_uid.split('@'), topicid, wxpuser_token
+    correct_data = []
+    ck_list = cks.split("@")
+    wxpuser_list = wxpuser_uid.split('@')
+    for index ,ck in enumerate(ck_list):
+        if 'gfsessionid=' in ck:
+            correct_data.append(ck)
+        else:
+            print(f"[账号{index+1}][错误]:填写格式不对正确的格式是在配置文件填写export gbydcks='gfsessionid=o-0fIxxxx....' 或者环境变量新建 变量名:gbydcks 值:gfsessionid=o-0fIxxxx....   多账号用@分割")
+    if len(correct_data) > len(wxpuser_list):
+        print(f"[警告][格式]:wxpuser_uid的数量与填写cookie的数量不一致,将默认第一个wxpuser_uid填补完整")
+        fill_count = len(ck_list) - len(wxpuser_list)
+        wxpuser_list.extend([wxpuser_list[0]] * fill_count)
+    return correct_data , wxpuser_list, topicid, wxpuser_token
 
 async def main():
     api_url = 'http://110.41.145.200:8088'
     if await test_api(api_url):
-        print(f"api:{api_url}服务当前可用")
+        print(f"[测试]:成功,服务当前可用")
     else:
-        print(f"api:{api_url}服务当前不可用,可能服务器断电、断网了,稍后再来吧")
+        print(f"[测试]:失败,服务当前不可用,可能服务器断电、断网了,稍后再来吧")
         exit()
     cks_list, wx_uids,topicid,wxpuser_token = await check_env()
     mapping = dict(zip(cks_list, wx_uids))
